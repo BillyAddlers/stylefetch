@@ -1,5 +1,7 @@
 # stylefetch
 
+![](screenshot.png)
+
 > A simple theming wrapper for [neofetch](https://github.com/dylanaraps/neofetch?)
 
 Themes are imported from [neofetch-themes](https://github.com/Chick2D/neofetch-themes)
@@ -18,3 +20,39 @@ cd stylefetch
 
 ./stylefetch --install
 ```
+
+## Usage
+
+### Check for available themes
+
+```sh
+stylefetch --list
+stylefetch -ls
+```
+
+![](1.png)
+
+### Apply a theme
+
+```sh
+stylefetch <a> <b>
+stylefetch normal papyrus
+```
+
+![](2.png)
+
+### Get [stylish](stylish_bandit_slayer.jpg)!
+
+```sh
+neofetch
+```
+
+![](3.png)
+
+## Contributing
+
+Just do what the fudge you want to, me couldn't care less.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE.md](LICENSE.md) file for details.
