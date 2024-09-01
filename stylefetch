@@ -1,0 +1,165 @@
+
+#!/bin/bash
+
+# Function to display help
+show_help() {
+    echo "Usage: $0 [OPTIONS] <a> <b>"
+    echo ""
+    echo "OPTIONS:"
+    echo "  -ls, --list           List available themes in 'normal' and 'small' directories"
+    echo "  --install             Install themes if they don't exist"
+    echo "  --help                Show this help message and exit"
+    echo ""
+    echo "ARGUMENTS:"
+    echo "  <a>                   The theme category (e.g., normal, small)"
+    echo "  <b>                   The theme name (e.g., remfetch)"
+    echo ""
+    echo "DESCRIPTION:"
+    echo "  This script allows you to change the Neofetch theme based on the specified"
+    echo "  category and theme name. The theme can be a '.conf' file or a directory"
+    echo "  containing a 'config.conf' file."
+    echo ""
+    echo "EXAMPLES:"
+    echo "  $0 normal remfetch       Change to 'remfetch' theme in 'normal' category"
+    echo "  $0 --install             Install themes if missing"
+    echo "  $0 -ls                   List all available themes"
+}
+
+# Function to check if git is installed
+check_git_installed() {
+    if ! command -v git &> /dev/null; then
+        echo "Error: git is not installed. Please install git to continue."
+        exit 1
+    fi
+}
+
+# Function to check if neofetch is installed
+check_neofetch_installed() {
+    if ! command -v neofetch &> /dev/null; then
+        echo "Error: neofetch is not installed. Please install neofetch to continue."
+        exit 1
+    fi
+}
+
+# Function to check if themes directory exists
+check_themes_directory() {
+    local themes_dir="${NEOFETCH_THEME_PATH:-$HOME/.config/neofetch/themes}"
+    if [[ ! -d "$themes_dir" ]]; then
+        echo "Error: Themes directory not found at $themes_dir. Please install themes first."
+        exit 1
+    fi
+}
+
+# Function to check all dependencies
+check_dependencies() {
+    check_git_installed
+    check_neofetch_installed
+    check_themes_directory
+
+    if command -v eza &> /dev/null; then
+        echo "eza is installed and will be used."
+    else
+        echo "WARNING: eza is not installed. Falling back to ls."
+    fi
+}
+
+# Function to install themes
+install_themes() {
+    local themes_dir="${NEOFETCH_THEME_PATH:-$HOME/.config/neofetch/themes}"
+
+    if [[ -d "$themes_dir" ]]; then
+        echo "Themes directory already exists at $themes_dir"
+    else
+        echo "Themes directory not found at $themes_dir"
+        echo "Cloning neofetch themes from GitHub..."
+        check_git_installed
+        git clone https://github.com/Chick2D/neofetch-themes.git "$themes_dir"
+        
+        if [[ $? -eq 0 ]]; then
+            echo "Themes successfully installed to $themes_dir"
+        else
+            echo "Failed to install themes. Please check the error messages and try again."
+            exit 1
+        fi
+    fi
+}
+
+# Function to list available themes
+list_themes() {
+    local normal_dir="$HOME/.config/neofetch/themes/normal"
+    local small_dir="$HOME/.config/neofetch/themes/small"
+
+    echo "Listing themes in 'normal' and 'small' directories:"
+
+    if command -v eza &> /dev/null; then
+        echo "Using eza"
+        echo " "
+        echo "Normal themes:"
+        eza --icons=always "$normal_dir"
+        echo "Small themes:"
+        eza --icons=always "$small_dir"
+    else
+        echo "WARNING: eza not found. Falling back to ls."
+        echo "Using ls"
+        echo " "
+        echo "Normal themes:"
+        ls "$normal_dir"
+        echo "Small themes:"
+        ls "$small_dir"
+    fi
+}
+
+# Function to change the neofetch theme
+change_neofetch_theme() {
+    local a=$1
+    local b=$2
+    local config_path="$HOME/.config/neofetch/config.conf"
+    local theme_path
+
+    # Check if both arguments are provided
+    if [[ -z "$a" || -z "$b" ]]; then
+        echo "Usage: $0 <a> <b>"
+        return 1
+    fi
+
+    # Check for theme file with .conf extension
+    if [[ -f "$HOME/.config/neofetch/themes/$a/$b.conf" ]]; then
+        theme_path="$HOME/.config/neofetch/themes/$a/$b.conf"
+    # Check if it's a directory with a config.conf inside
+    elif [[ -d "$HOME/.config/neofetch/themes/$a/$b" && -f "$HOME/.config/neofetch/themes/$a/$b/config.conf" ]]; then
+        theme_path="$HOME/.config/neofetch/themes/$a/$b/config.conf"
+    else
+        echo "Theme file $b does not exist in either format."
+        return 1
+    fi
+
+    # Cleaning old config
+    echo "Cleaning old config..."
+
+    # Apply the theme to neofetch config
+    cat "$theme_path" > "$config_path"
+
+    if [[ $? -eq 0 ]]; then
+        echo "Neofetch theme changed to $a/$b."
+    else
+        echo "Failed to change neofetch theme. Please check the paths and try again."
+    fi
+}
+
+# Run dependency check before any other actions
+check_dependencies
+
+# Check for -ls, --list, --install, or --help flag
+if [[ "$1" == "-ls" || "$1" == "--list" ]]; then
+    list_themes
+    exit 0
+elif [[ "$1" == "--install" ]]; then
+    install_themes
+    exit 0
+elif [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+
+# Call the function with provided arguments if not listing themes, installing themes, or showing help
+change_neofetch_theme "$1" "$2"
